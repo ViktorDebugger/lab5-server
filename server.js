@@ -12,11 +12,7 @@ const app = express();
 // Налаштування CORS
 app.use(
   cors({
-    origin: [
-      "https://viktordebugger.github.io/lab5",
-      "https://viktordebugger.github.io",
-      "http://localhost:5173",
-    ],
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
