@@ -8,7 +8,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
+
+// Налаштування CORS
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        "https://viktordebugger.github.io",
+        "http://localhost:5173",
+      ];
+      if (
+        !origin ||
+        allowedOrigins.some((allowedOrigin) => origin.startsWith(allowedOrigin))
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 const port = process.env.PORT || 3000;
 
