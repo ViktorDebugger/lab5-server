@@ -12,20 +12,11 @@ const app = express();
 // Налаштування CORS
 app.use(
   cors({
-    origin: function (origin, callback) {
-      const allowedOrigins = [
-        "https://viktordebugger.github.io",
-        "http://localhost:5173",
-      ];
-      if (
-        !origin ||
-        allowedOrigins.some((allowedOrigin) => origin.startsWith(allowedOrigin))
-      ) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: [
+      "https://viktordebugger.github.io/lab5",
+      "https://viktordebugger.github.io",
+      "http://localhost:5173",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
