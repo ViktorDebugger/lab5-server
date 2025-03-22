@@ -1,9 +1,8 @@
 import express from "express";
 import cors from "cors";
 import admin from "firebase-admin";
-import serviceAccount from "./lw-5-development-firebase-adminsdk-fbsvc-119a2a35ac.json" with { type: "json" };
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,9 +10,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(cors());
 app.use(express.json());
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || "{}");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -33,10 +34,10 @@ app.get("/api/dishes", async (_, res) => {
       });
     }
 
-    const dishes = snapshot.docs.map(doc => ({
+    const dishes = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      price: Number(doc.data().price)
+      price: Number(doc.data().price),
     }));
 
     res.status(200).json(dishes);
@@ -73,7 +74,7 @@ app.get("/api/basket/:userId", async (req, res) => {
     } else {
       res.status(200).json({
         basket: [],
-      })
+      });
     }
   } catch (error) {
     console.error("Помилка при отрманін кошика: ", error);
@@ -173,13 +174,12 @@ app.post("/api/orders", async (req, res) => {
     });
 
     res.status(200).json({ message: "Замовлення успішно збережено" });
-
   } catch (error) {
     console.error("Помилка при збереженні замовлення: ", error);
     res.status(500).json({
       message: "Помилка при збереженні замовлення",
       error: error.message,
-     })
+    });
   }
 });
 
@@ -204,7 +204,9 @@ app.patch("/api/orders/:userId/:orderId/:dishId", async (req, res) => {
     }
 
     const orders = snapshot.data().orders || [];
-    const orderIndex = orders.findIndex(order => order.orderId === Number(orderId));
+    const orderIndex = orders.findIndex(
+      (order) => order.orderId === Number(orderId)
+    );
 
     if (orderIndex === -1) {
       return res.status(404).json({
@@ -212,7 +214,9 @@ app.patch("/api/orders/:userId/:orderId/:dishId", async (req, res) => {
       });
     }
 
-    const dishIndex = orders[orderIndex].items.findIndex(item => item.orderDishId === Number(dishId));
+    const dishIndex = orders[orderIndex].items.findIndex(
+      (item) => item.orderDishId === Number(dishId)
+    );
 
     if (dishIndex === -1) {
       return res.status(404).json({
