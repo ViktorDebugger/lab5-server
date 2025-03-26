@@ -1,25 +1,36 @@
 import express from "express";
 import cors from "cors";
 import admin from "firebase-admin";
-import serviceAccount from "./lw-5-development-firebase-adminsdk-fbsvc-119a2a35ac.json" with { type: "json" };
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-const port = 3000;
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Налаштування CORS
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+  })
+);
+
+app.use(express.json());
+const port = process.env.PORT || 3000;
+
+app.use(express.static(path.join(__dirname, "public")));
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || "{}");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
 const db = admin.firestore();
+
 // ------------------dishes--------------------------------------
 app.get("/api/dishes", async (_, res) => {
   try {
@@ -32,10 +43,10 @@ app.get("/api/dishes", async (_, res) => {
       });
     }
 
-    const dishes = snapshot.docs.map(doc => ({
+    const dishes = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      price: Number(doc.data().price)
+      price: Number(doc.data().price),
     }));
 
     res.status(200).json(dishes);
@@ -72,7 +83,7 @@ app.get("/api/basket/:userId", async (req, res) => {
     } else {
       res.status(200).json({
         basket: [],
-      })
+      });
     }
   } catch (error) {
     console.error("Помилка при отрманін кошика: ", error);
@@ -172,13 +183,12 @@ app.post("/api/orders", async (req, res) => {
     });
 
     res.status(200).json({ message: "Замовлення успішно збережено" });
-
   } catch (error) {
     console.error("Помилка при збереженні замовлення: ", error);
     res.status(500).json({
       message: "Помилка при збереженні замовлення",
       error: error.message,
-     })
+    });
   }
 });
 
@@ -203,7 +213,9 @@ app.patch("/api/orders/:userId/:orderId/:dishId", async (req, res) => {
     }
 
     const orders = snapshot.data().orders || [];
-    const orderIndex = orders.findIndex(order => order.orderId === Number(orderId));
+    const orderIndex = orders.findIndex(
+      (order) => order.orderId === Number(orderId)
+    );
 
     if (orderIndex === -1) {
       return res.status(404).json({
@@ -211,7 +223,9 @@ app.patch("/api/orders/:userId/:orderId/:dishId", async (req, res) => {
       });
     }
 
-    const dishIndex = orders[orderIndex].items.findIndex(item => item.orderDishId === Number(dishId));
+    const dishIndex = orders[orderIndex].items.findIndex(
+      (item) => item.orderDishId === Number(dishId)
+    );
 
     if (dishIndex === -1) {
       return res.status(404).json({
@@ -254,7 +268,6 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-
 app.post("/api/signup", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -273,16 +286,19 @@ app.post("/api/signup", async (req, res) => {
     const customToken = await admin.auth().createCustomToken(userRecord.uid);
 
     // Отримуємо idToken через Firebase Auth REST API
-    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${serviceAccount.webApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        token: customToken,
-        returnSecureToken: true,
-      }),
-    });
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${serviceAccount.webApiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: customToken,
+          returnSecureToken: true,
+        }),
+      }
+    );
 
     const data = await response.json();
     res.status(201).json({
@@ -296,7 +312,11 @@ app.post("/api/signup", async (req, res) => {
   } catch (error) {
     console.error("Помилка реєстрації:", error);
     if (error.code === "auth/email-already-in-use") {
-      res.status(400).json({ message: "Обліковий запис з такою електронною поштою вже існує" });
+      res
+        .status(400)
+        .json({
+          message: "Обліковий запис з такою електронною поштою вже існує",
+        });
     } else {
       res.status(500).json({ message: "Помилка при створенні користувача" });
     }
@@ -313,21 +333,24 @@ app.post("/api/login", async (req, res) => {
 
     // Отримуємо користувача за email
     const userRecord = await admin.auth().getUserByEmail(email);
-    
+
     // Створюємо customToken
     const customToken = await admin.auth().createCustomToken(userRecord.uid);
 
     // Отримуємо idToken через Firebase Auth REST API
-    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${serviceAccount.webApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        token: customToken,
-        returnSecureToken: true,
-      }),
-    });
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${serviceAccount.webApiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: customToken,
+          returnSecureToken: true,
+        }),
+      }
+    );
 
     const data = await response.json();
     res.status(200).json({
@@ -365,13 +388,15 @@ app.get("/api/user", authenticateUser, async (req, res) => {
     });
   } catch (error) {
     console.error("Помилка отримання користувача:", error);
-    res.status(500).json({ message: "Помилка при отриманні даних користувача" });
+    res
+      .status(500)
+      .json({ message: "Помилка при отриманні даних користувача" });
   }
 });
 
 // Додаємо обробку всіх маршрутів для React Router
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 app.listen(port, () => {
