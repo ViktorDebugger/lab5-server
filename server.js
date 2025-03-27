@@ -21,7 +21,8 @@ app.use(
 app.use(express.json());
 const port = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, "public")));
+// Змінюємо шлях до статичних файлів
+app.use(express.static(path.join(__dirname, "../client/dist")));
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || "{}");
 
@@ -312,11 +313,9 @@ app.post("/api/signup", async (req, res) => {
   } catch (error) {
     console.error("Помилка реєстрації:", error);
     if (error.code === "auth/email-already-in-use") {
-      res
-        .status(400)
-        .json({
-          message: "Обліковий запис з такою електронною поштою вже існує",
-        });
+      res.status(400).json({
+        message: "Обліковий запис з такою електронною поштою вже існує",
+      });
     } else {
       res.status(500).json({ message: "Помилка при створенні користувача" });
     }
@@ -394,9 +393,9 @@ app.get("/api/user", authenticateUser, async (req, res) => {
   }
 });
 
-// Додаємо обробку всіх маршрутів для React Router
+// Додаємо обробку всіх маршрутів для SPA
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
 });
 
 app.listen(port, () => {
